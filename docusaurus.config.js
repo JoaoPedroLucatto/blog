@@ -12,6 +12,7 @@ const config = {
     baseUrl: '/',
     organizationName: 'JoaoPedroLucatto', // Usually your GitHub org/user name.
     projectName: 'blog', // Usually your repo name.
+    deploymentBranch: 'gh-pages',
 
     onBrokenLinks: 'throw',
     i18n: {
