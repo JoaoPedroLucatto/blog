@@ -1,0 +1,132 @@
+---
+slug: pg-timescaledb
+title: PostgreSQL + TimescaleDB
+authors: [joaopedrolucatto]
+tags: [postgresql, timescale]
+description: Um resumo sobre como usar PostgreSQL com TimescaleDB para séries temporais
+---
+
+## TimescaleDB
+
+Se você trabalha com dados que mudam ao longo do tempo (logs, sensores, métricas), esse combo aqui é simplesmente absurdo:
+
+👉 **PostgreSQL + TimescaleDB**
+
+---
+
+## O que é PostgreSQL?
+
+O PostgreSQL é um banco de dados relacional open source extremamente poderoso.
+
+Ele já vem com várias coisas que salvam a vida no dia a dia:
+
+- JSONB (pra dados semi-estruturados)
+- Índices avançados
+- Alta confiabilidade
+- SQL padrão (sem gambiarra)
+
+---
+
+## TimescaleDB?
+
+O TimescaleDB é uma extensão do PostgreSQL focada em **time-series**.
+
+Ele pega tudo que o Postgres já faz bem e turbina para dados com tempo, ou seja, deixa seu Postgres mais robusto para trabalhar com series temporais.
+
+Você continua usando SQL normal, mas com performance muito melhor.
+
+---
+
+## O poder: Hypertable
+
+A mágica começa aqui.
+
+Você cria uma tabela normal:
+
+```sql
+CREATE TABLE sensores (
+  time TIMESTAMPTZ NOT NULL,
+  device TEXT,
+  temperatura DOUBLE PRECISION
+);
+```
+
+E transforma ela em uma Hypertable
+
+```sql
+SELECT create_hypertable('sensores', 'time');
+```
+
+Isso faz com que o timescaledb divida os dados em "chunks" por tempo. Tendo isso consultas muito mais rápidas.
+
+## Segredos de bastidores
+
+Sem Hypertable:
+  - Uma tabela gigante
+  - Consultas ficando lentas com o tempo
+  - INSERTS demorados
+  - Aumento constante de Disco(Armazenamento)
+  - Consumos grandes de memoria para processamento de query pesadas.
+
+Com Hypertable:
+  - Dados particionados automaticamente
+  - Ganho de desempenho em query pesadas
+  - Compressão dos dados, com isso, menos consumo de Armazenamento
+  - INSERTS mais rapidos
+  - Ganho de funções para trabalhar com timeseries.
+
+## Compressão
+
+Dados antigos estão deixando seu banco de dados maior! A compressão do é um recurso feito para reduzir drasticamente o tamanho do banco de dados. Muitas vezes isso ajuda também a melhorar consultas historicas
+sem precisar "arquivar fora" do postgres.
+
+```sql
+ALTER TABLE sensores SET (
+  timescaledb.compress,
+  timescaledb.compress_segmentby = 'coluna_segmentacao' -- Ex: device_id
+)
+```
+
+```sql
+SELECT add_compression_policy('sensores', INTERVAL '1 year');
+```
+Com isso os dados com mais de 1 ano serão comprimidos automaticamente!
+Para verificar o processo de compressao e espaço economizado.
+
+```sql
+SELECT * FROM hypertable_compression_stats('sensores');
+```
+
+## Dashboards: Continuous Aggregates
+
+Imagina você precisar fornecer dados para N dashboards! Processar isso via query ou no front, não vai ser uma opção!
+Com isso temos as famosas CAGGs
+
+```sql
+CREATE MATERIALIZED VIEW sensores_media
+WITH (timescaledb.continuous) AS
+SELECT
+  time_bucket('1 hour', time) AS bucket,
+  avg(temperatura)
+FROM sensores
+GROUP BY bucket;
+```
+
+## Política de Retenção
+
+Dados antigos coletados muitas vezes perdem seu valor ao longo do tempo(Podemos discutir isso em outro assunto)! Quer apagar seus dados automaticamente.
+
+```sql
+SELECT add_retention_policy('sensores', INTERVAL '3 year');
+```
+
+Simples assim!
+
+## Conclusão
+
+O TimescaleDB é extremamente poderoso mas, como qualquer ferramenta, precisa ser bem utilizado.
+Não basta apenas instalar o TimescaleDB no PostgreSQL e esperar que a performance melhore da noite para o dia. É necessário entender o tipo de dado que você está lidando, como as consultas
+são feitas e se o modelo de séries temporais realmente se encaixa no seu problema.
+Sem esse cuidado, é comum cair na armadilha do “não funcionou”, quando na verdade o problema está no uso incorreto da ferramenta.
+Antes de adotar, vale analisar bem o cenário, testar e validar se faz sentido para o seu caso e para o seu time.
+Quando bem aplicado, aí sim o TimescaleDB mostra todo o seu potencial.
