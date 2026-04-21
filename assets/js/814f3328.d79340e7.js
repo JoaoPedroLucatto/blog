@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkblog=self.webpackChunkblog||[]).push([["833"],{5513(e){e.exports=JSON.parse('{"title":"Posts recentes","items":[{"title":"PostgreSQL + TimescaleDB","permalink":"/blog/pg-timescaledb","unlisted":false,"date":"2026-04-21T00:00:00.000Z"}]}')}}]);

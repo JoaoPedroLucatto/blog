@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkblog=self.webpackChunkblog||[]).push([["186"],{8070(e){e.exports=JSON.parse('{"tags":[{"label":"PostgreSQL","permalink":"/blog/tags/postgresql","description":"PostgreSQL tag description","count":1},{"label":"timescale","permalink":"/blog/tags/timescale","count":1}]}')}}]);
